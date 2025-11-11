@@ -62,99 +62,95 @@ button.ghost{ background:transparent; border:1px solid #ddd; padding:7px 10px; b
 </head>
 <body>
 
+
 <header>
-  <div class="left"><img src="c054929f-e7b4-4cf9-9ee4-0eb99611c227.png" alt="Company" /></div>
-  <h1>Room Booking – Company Trip</h1>
+<div class="left"><img src="c054929f-e7b4-4cf9-9ee4-0eb99611c227.png" alt="Company" /></div>
+<h1>Room Booking – Company Trip</h1>
 </header>
 
+
 <div class="controls" id="main-controls">
-  <div class="stats" id="summaryLeft"><span id="totalInfo">Loading...</span></div>
-  <div class="right">
-    <button class="ghost" id="exportCsvBtn">Export CSV</button>
-    <button class="primary" id="openAdmin">Admin</button>
-  </div>
+<div class="stats" id="summaryLeft"><span id="totalInfo">Loading...</span></div>
+<div class="right">
+<button class="ghost" id="exportCsvBtn">Export CSV</button>
+<button class="primary" id="openAdmin">Admin</button>
+</div>
 </div>
 
-<!-- Main page -->
+
 <div class="sections-wrap" id="main-page">
-  <div class="section" id="section-single">
-    <div class="header">
-      <h2>Single Rooms</h2>
-      <div class="controls-inline">
-        <button class="ghost admin-only" id="single-remove">− Remove Room</button>
-        <button class="ghost" id="single-add">＋ Add Room</button>
-      </div>
-    </div>
-    <div class="room-grid" id="grid-single"></div>
-  </div>
-
-  <div class="section" id="section-double">
-    <div class="header">
-      <h2>Double Rooms</h2>
-      <div class="controls-inline">
-        <button class="ghost admin-only" id="double-remove">− Remove Room</button>
-        <button class="ghost" id="double-add">＋ Add Room</button>
-      </div>
-    </div>
-    <div class="room-grid" id="grid-double"></div>
-  </div>
-
-  <div class="section" id="section-twin">
-    <div class="header">
-      <h2>Twin Room (two separate single beds)</h2>
-      <div class="controls-inline">
-        <button class="ghost admin-only" id="twin-remove">− Remove Room</button>
-        <button class="ghost" id="twin-add">＋ Add Room</button>
-      </div>
-    </div>
-    <div class="room-grid" id="grid-twin"></div>
-  </div>
+<div class="section" id="section-single">
+<div class="header">
+<h2>Single Rooms</h2>
+<div class="controls-inline">
+<button class="ghost admin-only" id="single-remove">− Remove Room</button>
+<button class="ghost" id="single-add">＋ Add Room</button>
+</div>
+</div>
+<div class="room-grid" id="grid-single"></div>
 </div>
 
-<!-- Stats Page -->
+
+<div class="section" id="section-double">
+<div class="header">
+<h2>Double Rooms</h2>
+<div class="controls-inline">
+<button class="ghost admin-only" id="double-remove">− Remove Room</button>
+<button class="ghost" id="double-add">＋ Add Room</button>
+</div>
+</div>
+<div class="room-grid" id="grid-double"></div>
+</div>
+
+
+<div class="section" id="section-twin">
+<div class="header">
+<h2>Twin Room (two separate single beds)</h2>
+<div class="controls-inline">
+<button class="ghost admin-only" id="twin-remove">− Remove Room</button>
+<button class="ghost" id="twin-add">＋ Add Room</button>
+</div>
+</div>
+<div class="room-grid" id="grid-twin"></div>
+</div>
+</div>
+
+
 <div class="stats-page" id="stats-page">
-  <h2>📊 Room Statistics</h2>
-  <div id="stats-summary"></div>
-  <table id="stats-table">
-    <thead><tr><th>Room</th><th>Type</th><th>Capacity</th><th>Occupant</th><th>Registered Time</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <button class="back-btn" onclick="backToMain()">← Back to Main Page</button>
+<h2>📊 Room Statistics</h2>
+<div id="stats-summary"></div>
+<table id="stats-table">
+<thead><tr><th>Room</th><th>Type</th><th>Capacity</th><th>Occupant</th><th>Registered Time</th></tr></thead>
+<tbody></tbody>
+</table>
+<button class="back-btn" onclick="backToMain()">← Back to Main Page</button>
 </div>
 
-<!-- Modal -->
+
 <div id="modal" class="modal" aria-hidden="true">
-  <div class="modal-panel">
-    <h3 id="modalTitle">Room</h3>
-    <div class="sub" id="modalSub">Details</div>
-
-    <div class="occupant-list" id="occupantList"></div>
-
-    <input id="nameInput" class="input" placeholder="Enter your name" autocomplete="off"/>
-
-    <div class="row">
-      <button class="btn register" id="registerBtn">Register</button>
-      <button class="btn close" id="closeBtn">Close</button>
-    </div>
-  </div>
+<div class="modal-panel">
+<h3 id="modalTitle">Room</h3>
+<div class="sub" id="modalSub">Details</div>
+<div class="occupant-list" id="occupantList"></div>
+<input id="nameInput" class="input" placeholder="Enter your name" autocomplete="off"/>
+<div class="row">
+<button class="btn register" id="registerBtn">Register</button>
+<button class="btn close" id="closeBtn">Close</button>
+</div>
+</div>
 </div>
 
-<!-- Firebase SDK (compat) -->
+
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
 <script>
-// ===== CONFIG (you provided this) =====
 const firebaseConfig = {
 apiKey: "AIzaSyDkLZiqaOlsdhVmDABQQjkIk09XRGsXJFs",
 authDomain: "room-booking-app-c7db8.firebaseapp.com",
 databaseURL: "https://room-booking-app-c7db8-default-rtdb.asia-southeast1.firebasedatabase.app",
 projectId: "room-booking-app-c7db8",
 storageBucket: "room-booking-app-c7db8.firebasestorage.app",
-messagingSenderId: "343921663087",
-appId: "1:343921663087:web:2413b98b2c2bf452f2c19a",
-measurementId: "G-04HNG2JS2N"
-};
+});
 // ======================================
 
 firebase.initializeApp(firebaseConfig);
@@ -546,8 +542,9 @@ function backToMain(){
 }
 
 /* Init */
-if (!rooms.length) ensureDefaultsAndSave();
+if (!rooms.length && isAdmin) ensureDefaultsAndSave();
 render();
 </script>
 </body>
 </html>
+
