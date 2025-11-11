@@ -12,28 +12,36 @@ header .left{ position:absolute; left:20px; }
 header img{ height:48px; display:block; }
 header h1{ margin:0; color:var(--accent); font-size:22px; font-weight:700; }
 
-
 .controls{ max-width:1100px; margin:18px auto 0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 16px; }
 .stats{ font-size:15px; color:var(--muted); }
 button.primary{ background:var(--accent); color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
 button.ghost{ background:transparent; border:1px solid #ddd; padding:7px 10px; border-radius:8px; cursor:pointer; }
 
-
-.sections-wrap{ max-width:1100px; margin:18px auto 90px; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; padding:0 16px; box-sizing:border-box; }
+.sections-wrap{
+  max-width:1400px; /* nới tổng khung */
+  margin:18px auto 90px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); /* cột rộng hơn */
+  gap:24px;
+  padding:0 24px;
+  box-sizing:border-box;
+}
 .section{ background:white; border-radius:12px; padding:12px; box-shadow:0 6px 18px rgba(0,0,0,0.04); }
 .section .header{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
 .section h2{ margin:0; color:var(--accent); font-size:16px; }
 .section .controls-inline{ display:flex; gap:8px; align-items:center; }
 
-
-.room-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap:12px; }
+.room-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* ✅ mỗi hàng có 2 phòng */
+  gap: 16px;
+}
 .room-card{ background:var(--card); border-radius:10px; padding:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); text-align:center; border:2px solid transparent; cursor:pointer; transition:transform .12s ease,border-color .12s; }
 .room-card:hover{ transform:translateY(-4px); border-color:#e6e6e6; }
 .room-card.locked{ opacity:0.75; cursor:not-allowed; border-color:#f4cccc; background:#fff6f6; }
 .room-icon{ font-size:34px; margin-bottom:6px; }
 .room-name{ font-weight:700; margin-bottom:6px; font-size:14px; color:#111; }
 .room-occupants{ font-size:13px; color:var(--muted); min-height:28px; line-height:1.2; }
-
 
 .modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); align-items:center; justify-content:center; z-index:50; padding:20px; }
 .modal.open{ display:flex; }
@@ -46,11 +54,9 @@ button.ghost{ background:transparent; border:1px solid #ddd; padding:7px 10px; b
 .btn.register{ background:var(--accent); color:white; }
 .btn.close{ background:#f0f0f0; color:#333; }
 
-
 .occupant-list{ margin-bottom:12px; }
 .occupant-item{ background:#fafafa; border:1px solid #eee; padding:8px 10px; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
 .occupant-item button{ border:none; background:transparent; color:#c00; cursor:pointer; font-weight:700; }
-
 
 .stats-page{ display:none; max-width:1100px; margin:40px auto; background:white; border-radius:12px; padding:20px; box-shadow:0 6px 20px rgba(0,0,0,0.08); }
 .stats-page table{ width:100%; border-collapse:collapse; margin-top:16px; }
@@ -75,11 +81,10 @@ button.ghost{ background:transparent; border:1px solid #ddd; padding:7px 10px; b
   </div>
 </div>
 
-<!-- Main page -->
 <div class="sections-wrap" id="main-page">
   <div class="section" id="section-single">
     <div class="header">
-      <h2>Single Rooms (Only Leaders require)</h2>
+      <h2>Single Rooms</h2>
       <div class="controls-inline">
         <button class="ghost admin-only" id="single-remove">− Remove Room</button>
         <button class="ghost" id="single-add">＋ Add Room</button>
@@ -101,13 +106,24 @@ button.ghost{ background:transparent; border:1px solid #ddd; padding:7px 10px; b
 
   <div class="section" id="section-twin">
     <div class="header">
-      <h2>Twin Room (two separate single beds)</h2>
+      <h2>Twin Rooms</h2>
       <div class="controls-inline">
         <button class="ghost admin-only" id="twin-remove">− Remove Room</button>
         <button class="ghost" id="twin-add">＋ Add Room</button>
       </div>
     </div>
     <div class="room-grid" id="grid-twin"></div>
+  </div>
+
+  <div class="section" id="section-triple">
+    <div class="header">
+      <h2>Triple Rooms (3 people)</h2>
+      <div class="controls-inline">
+        <button class="ghost admin-only" id="triple-remove">− Remove Room</button>
+        <button class="ghost" id="triple-add">＋ Add Room</button>
+      </div>
+    </div>
+    <div class="room-grid" id="grid-triple"></div>
   </div>
 </div>
 
@@ -144,151 +160,83 @@ button.ghost{ background:transparent; border:1px solid #ddd; padding:7px 10px; b
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-// ===== CONFIG (you provided this) =====
+// ===== CONFIG =====
 const firebaseConfig = {
-apiKey: "AIzaSyDkLZiqaOlsdhVmDABQQjkIk09XRGsXJFs",
-authDomain: "room-booking-app-c7db8.firebaseapp.com",
-databaseURL: "https://room-booking-app-c7db8-default-rtdb.asia-southeast1.firebasedatabase.app",
-projectId: "room-booking-app-c7db8",
-storageBucket: "room-booking-app-c7db8.firebasestorage.app",
-messagingSenderId: "343921663087",
-appId: "1:343921663087:web:2413b98b2c2bf452f2c19a",
-measurementId: "G-04HNG2JS2N"
+  apiKey: "AIzaSyDkLZiqaOlsdhVmDABQQjkIk09XRGsXJFs",
+  authDomain: "room-booking-app-c7db8.firebaseapp.com",
+  databaseURL: "https://room-booking-app-c7db8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "room-booking-app-c7db8",
+  storageBucket: "room-booking-app-c7db8.firebasestorage.app",
+  messagingSenderId: "343921663087",
+  appId: "1:343921663087:web:2413b98b2c2bf452f2c19a",
+  measurementId: "G-04HNG2JS2N"
 };
 // ======================================
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Admin password (kept simple; change if needed)
+// Admin password (change if needed)
 const ADMIN_PASS = '0977549979';
 
-// Global state
-let rooms = []; // array of { name, type, max, people: [{name, time}, ...] }
+// State
+let rooms = []; // array of { name, type, max, people: [{name,time}, ...] }
 let currentRoomIndex = null;
 let isAdmin = false;
 
+// Elements
+const gridSingle = document.getElementById('grid-single');
+const gridDouble = document.getElementById('grid-double');
+const gridTwin = document.getElementById('grid-twin');
+const gridTriple = document.getElementById('grid-triple');
+const totalInfo = document.getElementById('totalInfo');
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const modalSub = document.getElementById('modalSub');
+const occupantList = document.getElementById('occupantList');
+const nameInput = document.getElementById('nameInput');
+const registerBtn = document.getElementById('registerBtn');
+const closeBtn = document.getElementById('closeBtn');
+
 // Helpers
-function nowString(){
-  return new Date().toLocaleString();
-}
+function nowString(){ return new Date().toLocaleString(); }
 
 function saveRoomsToFirebase(){
-  // write entire rooms array to /rooms node
   db.ref('rooms').set(rooms).catch(err => console.error('Firebase write error:', err));
   localStorage.setItem('rooms', JSON.stringify(rooms));
 }
 
-function ensureDefaultsAndSave(){
-  // ✅ Chỉ tạo dữ liệu mặc định nếu rooms thực sự trống
-  if (rooms && Array.isArray(rooms) && rooms.length > 0) return;
-
-  rooms = [];
-  for(let i=1;i<=5;i++) rooms.push({ name:`Single Room ${i}`, type:'single', max:1, people:[] });
-  for(let i=1;i<=5;i++) rooms.push({ name:`Double Room ${i}`, type:'double', max:2, people:[] });
-  for(let i=1;i<=5;i++) rooms.push({ name:`Twin Room ${i}`, type:'twin', max:2, people:[] });
-  saveRoomsToFirebase();
-}
-
-// Real-time listener (keeps local data synced)
-const cached = localStorage.getItem('rooms');
-if (cached) {
-try { rooms = JSON.parse(cached); } catch(e) { rooms = []; }
-}
-
-
-function nowString(){ return new Date().toLocaleString(); }
-
-
-function saveRoomsToFirebase(){
-db.ref('rooms').set(rooms).catch(err => console.error('Firebase write error:', err));
-localStorage.setItem('rooms', JSON.stringify(rooms)); // ✅ save locally
-}
-
-
-function ensureDefaultsAndSave(){
-if(!rooms || !Array.isArray(rooms) || rooms.length === 0){
-rooms = [];
-for(let i=1;i<=5;i++) rooms.push({ name:`Single Room ${i}`, type:'single', max:1, people:[] });
-for(let i=1;i<=5;i++) rooms.push({ name:`Double Room ${i}`, type:'double', max:2, people:[] });
-for(let i=1;i<=5;i++) rooms.push({ name:`Twin Room ${i}`, type:'twin', max:2, people:[] });
-saveRoomsToFirebase();
-}
-}
-
-// 
-db.ref('rooms').once('value').then(snapshot => {
-  const val = snapshot.val();
-  if (!val) {
-    console.log("Firebase empty → create defaults once");
-    ensureDefaultsAndSave();
-  }
-});
-
-// Helper: build default rooms
-function defaultRooms() {
+function defaultRooms(){
   const arr = [];
   for(let i=1;i<=5;i++) arr.push({ name:`Single Room ${i}`, type:'single', max:1, people:[] });
   for(let i=1;i<=5;i++) arr.push({ name:`Double Room ${i}`, type:'double', max:2, people:[] });
   for(let i=1;i<=5;i++) arr.push({ name:`Twin Room ${i}`, type:'twin', max:2, people:[] });
+  for(let i=1;i<=5;i++) arr.push({ name:`Triple Room ${i}`, type:'triple', max:3, people:[] });
   return arr;
 }
 
-// Try to create defaults atomically on the server only if /rooms is null.
-// Transaction will succeed for the first client if node is empty, others will abort.
+// quick render from cache so user doesn't see blank while firebase connects
+const cached = localStorage.getItem('rooms');
+if (cached) {
+  try { rooms = JSON.parse(cached); } catch(e) { rooms = []; }
+  render();
+}
+
+// Atomic create defaults on server if node empty (prevents race resets)
 db.ref('rooms').transaction(current => {
-  if (current === null) {
-    return defaultRooms();
-  }
-  // if already exists, abort transaction (return undefined)
-  return;
+  if (current === null) return defaultRooms();
+  return; // abort if exists
 }, (error, committed, snapshot) => {
-  if (error) {
-    console.error('Firebase transaction error:', error);
-  }
-  // After transaction (committed or aborted), read current value and continue
-  const val = snapshot ? snapshot.val() : null;
-  if (val) {
-    // Normalize into array like before
-    if (Array.isArray(val)) rooms = val;
-    else {
-      const arr = [];
-      Object.keys(val).forEach(k => {
-        if(!isNaN(parseInt(k))) arr[parseInt(k)] = val[k];
-        else arr.push(val[k]);
-      });
-      rooms = arr.filter(r => r !== undefined);
-    }
-    rooms = rooms.map(r => ({
-      name: r.name || 'Room',
-      type: r.type || 'double',
-      max: (typeof r.max === 'number') ? r.max : (r.type === 'single' ? 1 : 2),
-      people: Array.isArray(r.people) ? r.people : []
-    }));
-    localStorage.setItem('rooms', JSON.stringify(rooms));
-    render();
-  } else {
-    // If snapshot still null for some reason, fallback to localStorage or defaults
-    const cached = localStorage.getItem('rooms');
-    if (cached) {
-      try { rooms = JSON.parse(cached); } catch(e) { rooms = defaultRooms(); }
-    } else {
-      rooms = defaultRooms();
-      // write defaults to Firebase (this is rare; transaction should have covered it)
-      db.ref('rooms').set(rooms).catch(err => console.error('Fallback set error:', err));
-    }
-    localStorage.setItem('rooms', JSON.stringify(rooms));
-    render();
-  }
+  if (error) console.error('Transaction error:', error);
+  // will continue with listener below
 });
-// Realtime listener to keep clients in sync. (This ONLY reads; it does NOT create defaults.)
+
+// Realtime listener (read-only behavior for defaults creation)
 db.ref('rooms').on('value', snapshot => {
   const val = snapshot.val();
-  if (!val) {
-    // don't create defaults here — transaction already handled creation
-    return;
-  }
+  if (!val) return; // if still null, transaction will handle; don't create here
 
+  // Normalize: support both array and object shapes
   if (Array.isArray(val)) rooms = val;
   else {
     const arr = [];
@@ -299,10 +247,11 @@ db.ref('rooms').on('value', snapshot => {
     rooms = arr.filter(r => r !== undefined);
   }
 
-  rooms = rooms.map(r => ({ 
+  // Normalize each room
+  rooms = rooms.map(r => ({
     name: r.name || 'Room',
     type: r.type || 'double',
-    max: (typeof r.max === 'number') ? r.max : (r.type === 'single' ? 1 : 2),
+    max: (typeof r.max === 'number') ? r.max : (r.type === 'single' ? 1 : (r.type === 'triple' ? 3 : 2)),
     people: Array.isArray(r.people) ? r.people : []
   }));
 
@@ -310,60 +259,60 @@ db.ref('rooms').on('value', snapshot => {
   render();
 });
 
-// UI wiring
-const gridSingle = document.getElementById('grid-single');
-const gridDouble = document.getElementById('grid-double');
-const gridTwin = document.getElementById('grid-twin');
-const totalInfo = document.getElementById('totalInfo');
-
+// render UI
 function render(){
-  // clear
+  if (!gridSingle || !gridDouble || !gridTwin || !gridTriple) return;
   gridSingle.innerHTML = '';
   gridDouble.innerHTML = '';
   gridTwin.innerHTML = '';
+  gridTriple.innerHTML = '';
 
   rooms.forEach((r, idx) => {
     const card = document.createElement('div');
-    card.className = 'room-card' + (r.people.length >= r.max ? ' locked' : '');
+    card.className = 'room-card' + (Array.isArray(r.people) && r.people.length >= r.max ? ' locked' : '');
     card.innerHTML = `
       <div class="room-icon">🚪</div>
       <div class="room-name">${r.name}</div>
-      <div class="room-occupants">${ r.people.length ? r.people.map(p=>p.name).join('<br>') : '<i style="color:#9a9a9a">No occupants</i>' }</div>
-      <div style="margin-top:8px; font-size:12px; color:var(--muted)">${r.people.length}/${r.max} occupants</div>
+      <div class="room-occupants">${ Array.isArray(r.people) && r.people.length ? r.people.map(p=>p.name).join('<br>') : '<i style="color:#9a9a9a">No occupants</i>' }</div>
+      <div style="margin-top:8px; font-size:12px; color:var(--muted)">${Array.isArray(r.people) ? r.people.length : 0}/${r.max} occupants</div>
     `;
     card.addEventListener('click', ()=> {
+      if(!Array.isArray(r.people)) r.people = [];
       if(r.people.length >= r.max){
         alert('This room is full.');
         return;
       }
       openModal(idx);
     });
-    if(r.type === 'single') gridSingle.appendChild(card);
-    else if(r.type === 'double') gridDouble.appendChild(card);
-    else gridTwin.appendChild(card);
+
+    if (r.type === 'single') gridSingle.appendChild(card);
+    else if (r.type === 'double') gridDouble.appendChild(card);
+    else if (r.type === 'twin') gridTwin.appendChild(card);
+    else if (r.type === 'triple') gridTriple.appendChild(card);
+    else gridDouble.appendChild(card);
   });
 
   const totalPeople = rooms.reduce((s,r)=>s + (Array.isArray(r.people) ? r.people.length : 0), 0);
   const counts = {
     single: rooms.filter(r=>r.type==='single').length,
     double: rooms.filter(r=>r.type==='double').length,
-    twin: rooms.filter(r=>r.type==='twin').length
+    twin: rooms.filter(r=>r.type==='twin').length,
+    triple: rooms.filter(r=>r.type==='triple').length
   };
-  totalInfo.textContent = `Total: ${rooms.length} rooms • ${totalPeople} people (Single:${counts.single} • Double:${counts.double} • Twin:${counts.twin})`;
+  totalInfo.textContent = `Total: ${rooms.length} rooms • ${totalPeople} people (Single:${counts.single} • Double:${counts.double} • Twin:${counts.twin} • Triple:${counts.triple})`;
 
-  // Show/hide admin-only controls
+  // show/hide admin-only controls
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'inline-block' : 'none');
 }
 
 /* Add / Remove Rooms */
 function addRoom(type){
-  const base = type === 'single' ? 'Single Room' : type === 'double' ? 'Double Room' : 'Twin Room';
+  const base = type === 'single' ? 'Single Room' : type === 'double' ? 'Double Room' : type === 'twin' ? 'Twin Room' : 'Triple Room';
   const count = rooms.filter(r=>r.type===type).length;
   const name = prompt('Enter new room name:', `${base} ${count+1}`);
   if(!name) return;
-  const max = type === 'single' ? 1 : 2;
+  const max = type === 'single' ? 1 : type === 'triple' ? 3 : 2;
   rooms.push({ name, type, max, people:[] });
-  // save
   saveRoomsToFirebase();
 }
 function removeRoom(type){
@@ -373,16 +322,14 @@ function removeRoom(type){
   const last = list[list.length - 1];
   if(!confirm(`Remove ${last.name}? This will remove occupants too.`)) return;
   rooms.splice(last.__idx, 1);
-  // reindex default-style names within type if you want contiguous names
   reindexNames(type);
   saveRoomsToFirebase();
 }
 function reindexNames(type){
-  const base = type === 'single' ? 'Single Room' : type === 'double' ? 'Double Room' : 'Twin Room';
+  const base = type === 'single' ? 'Single Room' : type === 'double' ? 'Double Room' : type === 'twin' ? 'Twin Room' : 'Triple Room';
   let counter = 1;
   rooms.forEach((r, i) => {
     if(r.type === type){
-      // rename only if current name matches default pattern or we want strict renaming
       r.name = `${base} ${counter++}`;
     }
   });
@@ -392,20 +339,14 @@ function reindexNames(type){
 document.getElementById('single-add').addEventListener('click', ()=>addRoom('single'));
 document.getElementById('double-add').addEventListener('click', ()=>addRoom('double'));
 document.getElementById('twin-add').addEventListener('click', ()=>addRoom('twin'));
+document.getElementById('triple-add').addEventListener('click', ()=>addRoom('triple'));
 
 document.getElementById('single-remove').addEventListener('click', ()=>removeRoom('single'));
 document.getElementById('double-remove').addEventListener('click', ()=>removeRoom('double'));
 document.getElementById('twin-remove').addEventListener('click', ()=>removeRoom('twin'));
+document.getElementById('triple-remove').addEventListener('click', ()=>removeRoom('triple'));
 
 /* Modal: register & occupants */
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-const modalSub = document.getElementById('modalSub');
-const occupantList = document.getElementById('occupantList');
-const nameInput = document.getElementById('nameInput');
-const registerBtn = document.getElementById('registerBtn');
-const closeBtn = document.getElementById('closeBtn');
-
 function openModal(index){
   currentRoomIndex = index;
   const r = rooms[index];
@@ -511,10 +452,12 @@ function adminStats(){
   const singleCount = rooms.filter(r=>r.type==='single').length;
   const doubleCount = rooms.filter(r=>r.type==='double').length;
   const twinCount = rooms.filter(r=>r.type==='twin').length;
+  const tripleCount = rooms.filter(r=>r.type==='triple').length;
   const singlePeople = rooms.filter(r=>r.type==='single').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0);
   const doublePeople = rooms.filter(r=>r.type==='double').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0);
   const twinPeople = rooms.filter(r=>r.type==='twin').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0);
-  alert(`Statistics:\nSingle: ${singleCount} rooms, ${singlePeople} people\nDouble: ${doubleCount} rooms, ${doublePeople} people\nTwin: ${twinCount} rooms, ${twinPeople} people`);
+  const triplePeople = rooms.filter(r=>r.type==='triple').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0);
+  alert(`Statistics:\nSingle: ${singleCount} rooms, ${singlePeople} people\nDouble: ${doubleCount} rooms, ${doublePeople} people\nTwin: ${twinCount} rooms, ${twinPeople} people\nTriple: ${tripleCount} rooms, ${triplePeople} people`);
 }
 
 function adminDeletePerson(){
@@ -547,10 +490,7 @@ function adminDeleteRoomByName(){
 
 function adminReset(){
   if(!confirm('Reset all data to default (5 rooms per type)?')) return;
-  rooms = [];
-  for(let i=1;i<=5;i++) rooms.push({ name:`Single Room ${i}`, type:'single', max:1, people:[] });
-  for(let i=1;i<=5;i++) rooms.push({ name:`Double Room ${i}`, type:'double', max:2, people:[] });
-  for(let i=1;i<=5;i++) rooms.push({ name:`Twin Room ${i}`, type:'twin', max:2, people:[] });
+  rooms = defaultRooms();
   saveRoomsToFirebase();
   alert('Reset complete.');
 }
@@ -594,14 +534,16 @@ function renderStatsTable(){
   const counts = {
     single: rooms.filter(r=>r.type==='single').length,
     double: rooms.filter(r=>r.type==='double').length,
-    twin: rooms.filter(r=>r.type==='twin').length
+    twin: rooms.filter(r=>r.type==='twin').length,
+    triple: rooms.filter(r=>r.type==='triple').length
   };
   const people = {
     single: rooms.filter(r=>r.type==='single').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0),
     double: rooms.filter(r=>r.type==='double').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0),
-    twin: rooms.filter(r=>r.type==='twin').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0)
+    twin: rooms.filter(r=>r.type==='twin').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0),
+    triple: rooms.filter(r=>r.type==='triple').reduce((s,r)=>s + (Array.isArray(r.people)?r.people.length:0),0)
   };
-  summary.innerHTML = `<b>Single:</b> ${counts.single} rooms, ${people.single} people<br><b>Double:</b> ${counts.double} rooms, ${people.double} people<br><b>Twin:</b> ${counts.twin} rooms, ${people.twin} people`;
+  summary.innerHTML = `<b>Single:</b> ${counts.single} rooms, ${people.single} people<br><b>Double:</b> ${counts.double} rooms, ${people.double} people<br><b>Twin:</b> ${counts.twin} rooms, ${people.twin} people<br><b>Triple:</b> ${counts.triple} rooms, ${people.triple} people`;
 
   rooms.forEach(r=>{
     if(Array.isArray(r.people) && r.people.length){
@@ -624,9 +566,7 @@ function backToMain(){
 }
 
 /* Init */
-if (!rooms.length) ensureDefaultsAndSave();
 render();
 </script>
 </body>
 </html>
-
