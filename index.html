@@ -176,6 +176,7 @@ function nowString(){
 function saveRoomsToFirebase(){
   // write entire rooms array to /rooms node
   db.ref('rooms').set(rooms).catch(err => console.error('Firebase write error:', err));
+  localStorage.setItem('rooms', JSON.stringify(rooms));
 }
 
 function ensureDefaultsAndSave(){
@@ -224,10 +225,69 @@ db.ref('rooms').once('value').then(snapshot => {
   }
 });
 
-// 🔧 Listener realtime chỉ để đọc dữ liệu, không ghi lại
+// Helper: build default rooms
+function defaultRooms() {
+  const arr = [];
+  for(let i=1;i<=5;i++) arr.push({ name:`Single Room ${i}`, type:'single', max:1, people:[] });
+  for(let i=1;i<=5;i++) arr.push({ name:`Double Room ${i}`, type:'double', max:2, people:[] });
+  for(let i=1;i<=5;i++) arr.push({ name:`Twin Room ${i}`, type:'twin', max:2, people:[] });
+  return arr;
+}
+
+// Try to create defaults atomically on the server only if /rooms is null.
+// Transaction will succeed for the first client if node is empty, others will abort.
+db.ref('rooms').transaction(current => {
+  if (current === null) {
+    return defaultRooms();
+  }
+  // if already exists, abort transaction (return undefined)
+  return;
+}, (error, committed, snapshot) => {
+  if (error) {
+    console.error('Firebase transaction error:', error);
+  }
+  // After transaction (committed or aborted), read current value and continue
+  const val = snapshot ? snapshot.val() : null;
+  if (val) {
+    // Normalize into array like before
+    if (Array.isArray(val)) rooms = val;
+    else {
+      const arr = [];
+      Object.keys(val).forEach(k => {
+        if(!isNaN(parseInt(k))) arr[parseInt(k)] = val[k];
+        else arr.push(val[k]);
+      });
+      rooms = arr.filter(r => r !== undefined);
+    }
+    rooms = rooms.map(r => ({
+      name: r.name || 'Room',
+      type: r.type || 'double',
+      max: (typeof r.max === 'number') ? r.max : (r.type === 'single' ? 1 : 2),
+      people: Array.isArray(r.people) ? r.people : []
+    }));
+    localStorage.setItem('rooms', JSON.stringify(rooms));
+    render();
+  } else {
+    // If snapshot still null for some reason, fallback to localStorage or defaults
+    const cached = localStorage.getItem('rooms');
+    if (cached) {
+      try { rooms = JSON.parse(cached); } catch(e) { rooms = defaultRooms(); }
+    } else {
+      rooms = defaultRooms();
+      // write defaults to Firebase (this is rare; transaction should have covered it)
+      db.ref('rooms').set(rooms).catch(err => console.error('Fallback set error:', err));
+    }
+    localStorage.setItem('rooms', JSON.stringify(rooms));
+    render();
+  }
+});
+// Realtime listener to keep clients in sync. (This ONLY reads; it does NOT create defaults.)
 db.ref('rooms').on('value', snapshot => {
   const val = snapshot.val();
-  if (!val) return; // Không gọi ensureDefaultsAndSave() ở đây nữa!
+  if (!val) {
+    // don't create defaults here — transaction already handled creation
+    return;
+  }
 
   if (Array.isArray(val)) rooms = val;
   else {
@@ -239,10 +299,10 @@ db.ref('rooms').on('value', snapshot => {
     rooms = arr.filter(r => r !== undefined);
   }
 
-  rooms = rooms.map(r => ({
+  rooms = rooms.map(r => ({ 
     name: r.name || 'Room',
     type: r.type || 'double',
-    max: typeof r.max === 'number' ? r.max : (r.type === 'single' ? 1 : 2),
+    max: (typeof r.max === 'number') ? r.max : (r.type === 'single' ? 1 : 2),
     people: Array.isArray(r.people) ? r.people : []
   }));
 
